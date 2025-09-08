@@ -1,5 +1,6 @@
 // app.module.ts
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotebooksModule } from './notebooks/notebooks.module';
 import { AppController } from './app.controller';
@@ -7,15 +8,20 @@ import { AppService } from './app.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: 'admin',
-      database: 'notebooks',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true, 
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'mysql',
+        host: 'localhost',
+        port: 3306,
+        username: config.get<string>('DB_USER'),
+        password: config.get<string>('DB_PASSWORD'),
+        database: config.get<string>('DB_NAME'),
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        synchronize: true,
+      }),
     }),
     NotebooksModule,
   ],
@@ -23,4 +29,4 @@ import { AppService } from './app.service';
   providers: [AppService],
 
 })
-export class AppModule {}
+export class AppModule { }
